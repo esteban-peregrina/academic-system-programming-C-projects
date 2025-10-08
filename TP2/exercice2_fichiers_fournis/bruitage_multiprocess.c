@@ -11,9 +11,9 @@
 #include "transf_image.h"
 
 // Gestionnaire de signaux
-void gestionnaire(int signum) {
-    if (signum == SIGUSR1) {
-        printf("Signal SIGUSR1 reçu !\n");
+void gestionnaire(int sig, siginfo_t *siginfo, void *context) {
+    if (sig == SIGUSR1) {
+        printf("J’ai recu un signal du processus %d\n", siginfo->si_pid);
     }
 }
 
@@ -22,8 +22,6 @@ void display_usage(){
 }
 
 int main(int argc, char **argv){
-	struct sigaction my_sigact;<
-
 	image_t *img = NULL;
 	unsigned long t0, tf;
 	unsigned int pcent;
@@ -36,19 +34,31 @@ int main(int argc, char **argv){
 	
 	/* Récupération du pourcentage de bruit */
 	pcent = atoi(argv[3]);
-	if((pcent > 100) || (pcent < 0)){
+	if((pcent > 100) || (pcent < 0)) {
 		display_usage();
 		return -1;
 	}
 	
 	/* Chargement de l'image d'origine */
 	img = charger_image_pgm(argv[1]);
-	if(! img){
+	if(!img){
 		display_usage();
 		return -1;
 	}
 
     image_t* duplicat = dupliquer_image_vers_nmap_anon(img);
+
+	// Gestion du signal
+	struct sigaction my_sigact;
+	memset(&my_sigact, '\0', sizeof(my_sigact));
+	/* Use the sa_sigaction field because the handles has two additional parameters */
+	my_sigact.sa_sigaction = gestionnaire;
+	/* The SA_SIGINFO flag tells sigaction() to use the sa_sigaction field, not sa_handler. */
+	my_sigact.sa_flags = SA_SIGINFO;
+  	if (sigaction(SIGUSR1, &my_sigact, NULL) < 0) {
+		perror ("sigaction");
+		return 1;
+	}
 
 	/* Compteur de temps initial */	
 	t0 = get_time();
@@ -61,6 +71,7 @@ int main(int argc, char **argv){
         child_PID_tab[i] = fork();
         if (child_PID_tab[i] == 0) {
             // Code enfant
+			kill(getppid(), SIGUSR1);
             bruit_image_zone(duplicat, pcent, i * (duplicat->nx / 4), 0, (i + 1) * (duplicat->nx / 4), duplicat->ny);
             exit(EXIT_SUCCESS);
         } 
