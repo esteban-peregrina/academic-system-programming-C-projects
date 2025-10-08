@@ -1,7 +1,7 @@
 # Sources
 *.pdf
 # Autres
-*/.DS_Store
+.DS_Store
 .vscode/
 # Images
 *.pgm
@@ -9,3 +9,6 @@
 *.zip
 *.tar
 *.gz
+
+bin/
+build/

@@ -58,15 +58,17 @@ void write_ppm(const char* filename, const img_t* img) {
     }
 
     fprintf(myStream, "P6\n%d %d\n255\n", img->width, img->height);
-    for (int p = 0; p < img->width * img->height; p++) {
-        ui32_t pixel = img->pixels[p];
-        // On redécoupe le pixel en octets
-        ui8_t r = pixel & 0xFF;
-        ui8_t g = (pixel >> 8) & 0xFF;
-        ui8_t b = (pixel >> 16) & 0xFF;
-        fputc(r, myStream);
-        fputc(g, myStream);
-        fputc(b, myStream);
+    
+    for (int y = img->height - 1; y >= 0; y--) {
+        for (int x = 0; x < img->width; x++) {
+            ui32_t pixel = img->pixels[y * img->width + x];
+            ui8_t r = pixel & 0xFF;
+            ui8_t g = (pixel >> 8) & 0xFF;
+            ui8_t b = (pixel >> 16) & 0xFF;
+            fputc(r, myStream);
+            fputc(g, myStream);
+            fputc(b, myStream);
+        }
     }
 
     if (fclose(myStream) == EOF) {

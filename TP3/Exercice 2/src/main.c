@@ -8,7 +8,7 @@ int main(int argc, char* argv[]) {
     argc--; // On décompte le nom du fichier
     argv++; // On saute le premier argument
     if (argc == 0) { // Si aucun autre argument n'a été fourni
-        printf( "Usage: ./program [filename]\n" );
+        printf( "Usage: ./program [filename.tga]\n" );
         exit(EXIT_SUCCESS);
     }
 
