@@ -1,0 +1,14 @@
+{
+    "name": "Environnement de développement C",
+    "build": { "dockerfile": "Dockerfile" },
+    "workspaceFolder": "/workspace",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cmake-tools",    
+                "ms-vscode.cpptools",  
+            ]
+        }
+    }
+}

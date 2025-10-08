@@ -1,0 +1,11 @@
+# Sources
+*.pdf
+# Autres
+*/.DS_Store
+.vscode/
+# Images
+*.pgm
+# Compressés
+*.zip
+*.tar
+*.gz
