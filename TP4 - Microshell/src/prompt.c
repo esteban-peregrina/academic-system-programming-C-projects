@@ -5,10 +5,7 @@
 #include <errno.h> // errno,
 #include <string.h> // strerror(),
 
-#define MAX_LENGTH 1024 // Default : 1024
-
-int prompt() {
-    char buffer[MAX_LENGTH];
+int prompt(char buffer[]) {
     if (fgets(buffer, MAX_LENGTH, stdin) == NULL) { // fgets() will bufferize MAX_LENGTH - 1 characters THEN adds '\0' at the end
         if (feof(stdin)) fprintf(stderr, "Error: unexpected end of input\n");
         else fprintf(stderr, "Error: fgets failed (%s)\n", strerror(errno));
