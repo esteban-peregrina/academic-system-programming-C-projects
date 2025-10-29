@@ -20,6 +20,8 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
         
         char** arg_values = analyze_arg_string(buffer, arg_count);
         for (int i = 0; i < arg_count; i++) printf("%s\n", arg_values[i]);
+        
+        // Built-in
         if (strcmp(arg_values[0], "exit") == 0) { 
             free(arg_values);
             printf("Fermeture du shell...\n");
