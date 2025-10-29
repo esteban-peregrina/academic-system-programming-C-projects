@@ -11,6 +11,7 @@
 
 int main(int argc, char **argv) { // TODO -v verbose et usage
     while(1) {
+        fprintf(stdout, "€ ");
         char buffer[MAX_LENGTH];
         prompt(buffer);
         fprintf(stdout, "Prompt is: %s\n", buffer);
@@ -21,7 +22,7 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
         for (int i = 0; i < arg_count; i++) printf("%s\n", arg_values[i]);
         if (strcmp(arg_values[0], "exit") == 0) { 
             free(arg_values);
-            printf("Bye 👋\n");
+            printf("Fermeture du shell...\n");
             exit(EXIT_SUCCESS); 
         }
 
@@ -37,10 +38,6 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
                 fprintf(stderr, "Error: execvp failed (%s)\n", strerror(errno));
                 exit(EXIT_FAILURE);
             }
-
-            // On ne doit jamais arriver ici si execvp() à correctement ecrasé le processus enfant
-            fprintf(stderr, "Error: execvp failed (%s)\n", strerror(errno));
-            exit(EXIT_FAILURE);
         } else {
             int status;
             waitpid(pid, &status, 0);
