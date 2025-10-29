@@ -13,7 +13,10 @@ int prompt(char buffer[]) {
     } 
     
     size_t len = strlen(buffer); // Equals MAX_LENGTH - 1 as strlen() doesn't count the '\0' that might have been added
-    if (buffer[len - 1] != '\n') { // Thus, does buffer[MAX_LENGTH - 2]
+    if (len == 0) {
+        fprintf(stderr, "Error: Empty input\n");
+        exit(EXIT_FAILURE);
+    } else if (buffer[len - 1] != '\n') { // Thus, does buffer[MAX_LENGTH - 2]
         char c;
         while ((c = getchar()) != '\n' && c != EOF); // Vide la ligne courante du flux stdin
         fprintf(stderr, 
