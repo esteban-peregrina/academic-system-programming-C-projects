@@ -5,6 +5,8 @@
 #include <errno.h>
 #include <string.h>
 
+#define MAX_ARGC 128 // Default 128 TODO
+
 int count_arguments(char buffer[]) {
     int arg_count = 0;
     int i = 0;
@@ -25,7 +27,7 @@ char** analyze_arg_string(char buffer[], int arg_count) {
     char** arg_values = NULL;
     arg_values = malloc(sizeof(char*) * arg_count);
     if (arg_values == NULL) {
-        fprintf(stderr, "Error: fgets failed (%s)\n", strerror(errno));
+        fprintf(stderr, "Error: malloc failed (%s)\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
     const char * delimiter = " ";
