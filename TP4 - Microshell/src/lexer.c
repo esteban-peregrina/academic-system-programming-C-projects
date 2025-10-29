@@ -1,3 +1,5 @@
+#include "../inc/lexer.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -19,7 +21,7 @@ int count_arguments(char buffer[]) {
     return arg_count;
 }
 
-char** parse_arg_string(char buffer[], int arg_count) {
+char** analyze_arg_string(char buffer[], int arg_count) {
     char** arg_values = NULL;
     arg_values = malloc(sizeof(char*) * arg_count);
     if (arg_values == NULL) {
