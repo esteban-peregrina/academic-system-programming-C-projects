@@ -2,6 +2,7 @@
 #define LEXER_H
 
 typedef enum {
+    SEP_NONE,
     SEP_SEQUENCE,   // ';'
     SEP_PIPE,   // '|'
     SEP_BACKGROUND, // '&'

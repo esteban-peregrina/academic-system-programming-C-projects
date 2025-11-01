@@ -41,8 +41,8 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
         //fprintf(stdout, "Prompt is: %s\n", buffer);
         
         // On compte le nombre de commande unitaires composant le prompt
-        int unit_cmd_count = 0;
-        for (char* c = buffer; *c != '\0'; c++) { if (*c == ';' || *c == '|' || *c == ">" || *c == "&") { unit_cmd_count++; } }
+        int unit_cmd_count = 1; // La dernière après le séparateur
+        for (char* c = buffer; *c != '\0'; c++) { if (*c == ';' || *c == '|' || *c == '>' || *c == '&') { unit_cmd_count++; } }
         // On construit le tableau des commandes unitaires avec ce nombre
         unit_command_t** unit_cmd_array = NULL;
         unit_cmd_array = malloc(sizeof(unit_command_t*) * unit_cmd_count);
@@ -52,24 +52,36 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
         }
 
         char* start = buffer;
+        int i = 0;
         for (char* c = buffer; *c != '\0'; c++) {
-            unit_command_t* unit_command = NULL;
-            unit_command = malloc(sizeof(unit_command_t));
-            if (unit_command == NULL) {
-                fprintf(stderr, "Error: malloc failed (%s)\n", strerror(errno));
-                exit(EXIT_FAILURE);
-            }
+            if (*c == ';' || *c == '|' || *c == '>' || *c == '&') {
+                // Création d'une commande 
+                unit_command_t* unit_command = NULL;
+                unit_command = malloc(sizeof(unit_command_t));
+                if (unit_command == NULL) {
+                    fprintf(stderr, "Error: malloc failed (%s)\n", strerror(errno));
+                    exit(EXIT_FAILURE);
+                }
+                // Initialisations
+                unit_command->async = 0;
+                unit_command->separator = SEP_NONE;
 
-            if (*c == ';' || *c == '|' || *c == ">" || *c == "&") {
+                // Affectations conditionnelles
                 if (*c == ';') {unit_command->separator = SEP_SEQUENCE; }
                 if (*c == '|') {unit_command->separator = SEP_PIPE; }
                 if (*c == '&') {unit_command->separator = SEP_BACKGROUND; unit_command->async = 1; }
                 if (*c == '>') {unit_command->separator = SEP_REDIRECT; } // TODO unit_command->outfile
                 *c = '\0';
                 unit_command->raw_command = strdup(start); // ALLOCATION DYNAMIQUE !
-                start = *c++;
+                start = c + 1;
+                unit_cmd_array[i++] = unit_command;
             }
         }
+        unit_command_t* last = malloc(sizeof(unit_command_t));
+        last->raw_command = strdup(start);
+        last->separator = SEP_NONE;
+        last->async = 0;
+        unit_cmd_array[i++] = last;
 
         // On exécute
         for (int i = 0; i < unit_cmd_count; i++) {
@@ -84,15 +96,15 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
                 exit(EXIT_SUCCESS); 
             }
             
-            exec_unit_command(unit_cmd_array[i]);
             exec_unit_command(unit_cmd_array[i]); //TODO si pipe faut lancer i et i+1 et incrémenter i en plus de la boucle 
         }
 
         // On libère
         for (int i = 0; i < unit_cmd_count; i++) {
-            free(unit_cmd_array[i]->raw_command); // TODO C'est tout ?
+            free(unit_cmd_array[i]->raw_command);
+            free(unit_cmd_array[i]);
         }
-        free(unit_cmd_array); // TODO free les struct en particulier les strdup()
+        free(unit_cmd_array);
     }
 
     return 0;
