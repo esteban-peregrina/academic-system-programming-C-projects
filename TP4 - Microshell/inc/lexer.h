@@ -1,7 +1,23 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-int count_arguments(char buffer[]);
-char** analyze_arg_string(char buffer[], int arg_count);
+typedef enum {
+    SEP_SEQUENCE,   // ';'
+    SEP_PIPE,   // '|'
+    SEP_BACKGROUND, // '&'
+    SEP_REDIRECT,   // '>'
+} separator_t;
+
+typedef struct unit_command_s {
+    char* raw_command;
+    int token_count;
+    char** token_array;
+    separator_t separator_t;
+    int async;
+    char* outfile;
+} unit_command_t;
+
+int count_tokens(unit_command_t* unit_command);
+int analyse_unit_command(unit_command_t* unit_command);
 
 #endif // LEXER_H

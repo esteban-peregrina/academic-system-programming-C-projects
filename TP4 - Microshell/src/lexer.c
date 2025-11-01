@@ -7,36 +7,35 @@
 
 #define MAX_ARGC 128 // Default 128 TODO
 
-int count_arguments(char buffer[]) {
-    int arg_count = 0;
+int count_tokens(unit_command_t* unit_command) {
     int i = 0;
-    
-    while(buffer[i] != '\0') {
-        if (buffer[i] != ' ') {
-            if(buffer[i+1] == ' ' || buffer[i+1] == '\0') arg_count++;
+    while(unit_command->raw_command[i] != '\0') {
+        if (unit_command->raw_command[i] != ' ') {
+            if(unit_command->raw_command[i+1] == ' ' || unit_command->raw_command[i+1] == '\0') unit_command->token_count++;
             i++;
-        } else while (buffer[i] != '\0' && buffer[i] == ' ') i++;
+        } else while (unit_command->raw_command[i] != '\0' && unit_command->raw_command[i] == ' ') i++;
     }
 
-    printf("ARGC: %d\n", arg_count);
+   //fprintf(stdout, "Token count: %d\n", token_count);
     
-    return arg_count;
+    return 0;
 }
 
-char** analyze_arg_string(char buffer[], int arg_count) {
-    char** arg_values = NULL;
-    arg_values = malloc(sizeof(char*) * arg_count);
-    if (arg_values == NULL) {
+int analyse_unit_command(unit_command_t* unit_command) {
+    unit_command->token_array = NULL;
+    unit_command->token_array = malloc(sizeof(char*) * unit_command->token_count);
+    if (unit_command->token_array == NULL) {
         fprintf(stderr, "Error: malloc failed (%s)\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
     const char * delimiter = " ";
-    char * strToken = strtok(buffer, delimiter);
-    for (int i = 0; i < arg_count; i++) {
+    char * strToken = strtok(unit_command->raw_command, delimiter);
+    for (int i = 0; i < unit_command->token_count; i++) {
         if (strToken == NULL) { break; }
-        arg_values[i] = strToken;
+        unit_command->token_array[i] = strToken;
         strToken = strtok(NULL, delimiter); // On passe au token suivant
     }
 
-    return arg_values;
+    return 0;
 }
+

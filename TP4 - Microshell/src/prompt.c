@@ -29,7 +29,7 @@ int prompt(char buffer[]) {
         buffer[len - 1] = '\0';
     }
 
-    fprintf(stdout, "Prompt is: %s\n", buffer);
+    //fprintf(stdout, "Prompt is: %s\n", buffer);
     
     return 0;
 }
