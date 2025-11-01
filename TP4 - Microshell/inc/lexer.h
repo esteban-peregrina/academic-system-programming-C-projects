@@ -12,7 +12,7 @@ typedef struct unit_command_s {
     char* raw_command;
     int token_count;
     char** token_array;
-    separator_t separator_t;
+    separator_t separator;
     int async;
     char* outfile;
 } unit_command_t;
