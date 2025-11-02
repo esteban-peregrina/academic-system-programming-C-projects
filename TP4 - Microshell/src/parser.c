@@ -67,16 +67,17 @@ int fill_cmd_array(unit_command_t** unit_cmd_array, char* prompt, int unit_cmd_c
     unit_cmd_array[separator]->separator = SEP_NONE; // La dernière commande
 
     // On ajoute chaque séquence à sa commande unitaire
-    int c = 0;
     const char * delimiter = ";|>&";
     char* command = strtok(prompt, delimiter);
-    for (int i = 0; i < unit_cmd_count; i++) {
+    for (int c = 0; c < unit_cmd_count; c++) {
         if (command == NULL) { break; }
         unit_cmd_array[c]->raw_command = command;
+        command = strtok(NULL, delimiter); // On passe à la commande suivante
+    }
+
+    for (int c = 0; c < unit_cmd_count; c++) {
         count_tokens(unit_cmd_array[c]);
         analyse_unit_command(unit_cmd_array[c]); 
-        c++;
-        command = strtok(NULL, delimiter); // On passe à la commande suivante
     }
 
     return 0;

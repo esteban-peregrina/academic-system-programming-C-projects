@@ -12,6 +12,8 @@
 #include <sys/wait.h> 
 #include <fcntl.h>
 
+// TODO : Gestion des string "comme ça" comme un seul argument  
+
 int main(int argc, char **argv) { // TODO -v verbose et usage
     while(1) {
         // Lecture du prompt
