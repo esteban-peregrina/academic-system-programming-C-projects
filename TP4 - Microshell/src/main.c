@@ -75,11 +75,34 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
             analyse_unit_command(unit_cmd_array[i]);
             //for (int i = 0; i < unit_cmd_array->token_count; i++) fprintf(stdout, "%s\n", unit_cmd_array->token_array[i]);
             
-            // Gestion exit
+            // Built-in "exit"
             if (strcmp(unit_cmd_array[i]->token_array[0], "exit") == 0) { 
                 free(unit_cmd_array[i]->token_array);
                 printf("Fermeture du shell...\n");
                 exit(EXIT_SUCCESS); 
+            }
+
+            // Built-in "cd"
+            if (strcmp(unit_cmd_array[i]->token_array[0], "cd") == 0) {
+                if (unit_cmd_array[i]->token_count < 2) {
+                    fprintf(stderr, "Error: cd: missing argument\n");
+                } else {
+                    if (chdir(unit_cmd_array[i]->token_array[1]) != 0) {
+                        fprintf(stderr, "Error: cd %s: %s\n", unit_cmd_array[i]->token_array[1], strerror(errno));
+                    }
+                }
+                continue; // Passe à la commande suivante
+            }
+
+            // Built-in "pwd"
+            if (strcmp(unit_cmd_array[i]->token_array[0], "pwd") == 0) {
+                char cwd[1024];
+                if (getcwd(cwd, sizeof(cwd)) == NULL) {
+                    fprintf(stderr, "Error: getcwd failed %s\n", strerror(errno));
+                } else {
+                   printf("%s\n", cwd);
+                }
+                continue; // Passe à la commande suivante
             }
             
             // Gestion des pipes
