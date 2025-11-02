@@ -23,17 +23,21 @@ int count_tokens(unit_command_t* unit_command) {
 }
 
 int count_commands(char* prompt) {
-    int unit_cmd_count = 1; // On compte la dernière après le dernier séparateur
-    for (char* c = prompt; *c != '\0'; c++) { if (*c == ';' || *c == '|' || *c == '>' || *c == '&') { unit_cmd_count++; } }
-    // On construit le tableau des commandes unitaires avec ce nombre
-    unit_command_t** unit_cmd_array = NULL;
-    unit_cmd_array = malloc(sizeof(unit_command_t*) * unit_cmd_count);
-    if (unit_cmd_array == NULL) {
-        fprintf(stderr, "Error: malloc failed (%s)\n", strerror(errno));
-        exit(EXIT_FAILURE);
+    // Prompt type : |l|s| |-|a|;| | |\0|
+    int unit_cmd_count = 0;
+    int hasChar = 0;
+    for (char* c = prompt; *c != '\0'; c++) { 
+        if (*c != ' ') { hasChar++; }
+        if (*c == ';' || *c == '|' || *c == '>' || *c == '&') { 
+            unit_cmd_count++; 
+            hasChar = 0;
+        } 
     }
+    
+    if (hasChar > 0) { unit_cmd_count++; } // On compte la dernière après le dernier séparateur
 
     return unit_cmd_count;
 }
+
 
 

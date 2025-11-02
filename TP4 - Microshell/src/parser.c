@@ -64,7 +64,9 @@ int fill_cmd_array(unit_command_t** unit_cmd_array, char* prompt, int unit_cmd_c
         else if (*c == '&') {unit_cmd_array[separator]->separator = SEP_BACKGROUND; unit_cmd_array[separator++]->async = 1; } // Ligne tricky haha
         else if (*c == '>') {unit_cmd_array[separator++]->separator = SEP_REDIRECT; } // TODO unit_command->outfile
     }
-    unit_cmd_array[separator]->separator = SEP_NONE; // La dernière commande
+    if (separator < unit_cmd_count) {
+        unit_cmd_array[separator]->separator = SEP_NONE; // On ajoute la dernière ligne
+    }
 
     // On ajoute chaque séquence à sa commande unitaire
     const char * delimiter = ";|>&";
