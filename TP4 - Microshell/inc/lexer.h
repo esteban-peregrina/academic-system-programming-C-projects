@@ -19,6 +19,6 @@ typedef struct unit_command_s {
 } unit_command_t;
 
 int count_tokens(unit_command_t* unit_command);
-int analyse_unit_command(unit_command_t* unit_command);
+int count_commands(char* prompt);
 
 #endif // LEXER_H

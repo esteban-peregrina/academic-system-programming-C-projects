@@ -1,5 +1,6 @@
 #include "../inc/execution.h"
 #include "../inc/lexer.h"
+#include "../inc/parser.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,3 +136,65 @@ int exec_pipe(unit_command_t* cmd1, unit_command_t* cmd2) {
     return 0;
 }
 
+int exe_cmd_array (unit_command_t** unit_cmd_array, int unit_cmd_count) {
+    // On exécute tout ce qui est dans le tableau
+    for (int i = 0; i < unit_cmd_count; i++) {
+        count_tokens(unit_cmd_array[i]);
+        //fprintf(stdout, "Number of tokens: %d\n", unit_cmd_array[i]->token_count);
+        analyse_unit_command(unit_cmd_array[i]);
+        //for (int i = 0; i < unit_cmd_array->token_count; i++) fprintf(stdout, "%s\n", unit_cmd_array->token_array[i]);
+        
+        // Built-in "exit"
+        if (strcmp(unit_cmd_array[i]->token_array[0], "exit") == 0) { 
+            free(unit_cmd_array[i]->token_array);
+            printf("Fermeture du shell...\n");
+            exit(EXIT_SUCCESS); 
+        }
+
+        // Built-in "cd"
+        if (strcmp(unit_cmd_array[i]->token_array[0], "cd") == 0) {
+            if (unit_cmd_array[i]->token_count < 2) {
+                fprintf(stderr, "Error: cd: missing argument\n");
+            } else {
+                if (chdir(unit_cmd_array[i]->token_array[1]) != 0) {
+                    fprintf(stderr, "Error: cd %s: %s\n", unit_cmd_array[i]->token_array[1], strerror(errno));
+                }
+            }
+            continue; // Passe à la commande suivante
+        }
+
+        // Built-in "pwd"
+        if (strcmp(unit_cmd_array[i]->token_array[0], "pwd") == 0) {
+            char cwd[1024];
+            if (getcwd(cwd, sizeof(cwd)) == NULL) {
+                fprintf(stderr, "Error: getcwd failed %s\n", strerror(errno));
+            } else {
+                printf("%s\n", cwd);
+            }
+            continue; // Passe à la commande suivante
+        }
+        
+        // Gestion des pipes
+        if (unit_cmd_array[i]->separator == SEP_PIPE && i + 1 < unit_cmd_count) {
+            count_tokens(unit_cmd_array[i + 1]);
+            analyse_unit_command(unit_cmd_array[i + 1]);
+            exec_pipe(unit_cmd_array[i], unit_cmd_array[i + 1]);
+            i++; // On saute la commande suivante car elle est déjà traitée
+        }
+        // Gestion des redirections
+        else if (unit_cmd_array[i]->separator == SEP_REDIRECT && i + 1 < unit_cmd_count) {
+            count_tokens(unit_cmd_array[i + 1]);
+            analyse_unit_command(unit_cmd_array[i + 1]);
+            exec_redirect(unit_cmd_array[i], unit_cmd_array[i + 1]);
+            i++; // On saute la commande suivante car elle est déjà traitée
+        }
+        // Exécution normale
+        else {
+            if (unit_cmd_array[i]->separator == SEP_PIPE) { fprintf(stdout, "Tuyau négligé car absence de second processus.\n"); }
+            if (unit_cmd_array[i]->separator == SEP_REDIRECT) { fprintf(stdout, "Redirection négligée car absence de second processus.\n"); }
+            exec_unit_command(unit_cmd_array[i]);
+        }
+    }
+
+    return 0;
+}

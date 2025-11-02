@@ -1,5 +1,6 @@
 #include "../inc/prompt.h"
 #include "../inc/lexer.h"
+#include "../inc/parser.h"
 #include "../inc/execution.h"
 
 #include <stdio.h>
@@ -13,119 +14,19 @@
 
 int main(int argc, char **argv) { // TODO -v verbose et usage
     while(1) {
+        // Lecture du prompt
         fprintf(stdout, "€ ");
         char buffer[MAX_LENGTH];
         prompt(buffer);
         //fprintf(stdout, "Prompt is: %s\n", buffer);
         
-        // On compte le nombre de commande unitaires composant le prompt
-        int unit_cmd_count = 1; // La dernière après le séparateur
-        for (char* c = buffer; *c != '\0'; c++) { if (*c == ';' || *c == '|' || *c == '>' || *c == '&') { unit_cmd_count++; } }
-        // On construit le tableau des commandes unitaires avec ce nombre
-        unit_command_t** unit_cmd_array = NULL;
-        unit_cmd_array = malloc(sizeof(unit_command_t*) * unit_cmd_count);
-        if (unit_cmd_array == NULL) {
-            fprintf(stderr, "Error: malloc failed (%s)\n", strerror(errno));
-            exit(EXIT_FAILURE);
-        }
-
-        // On ajoute les commandes unitaires
-        for (int i = 0; i < unit_cmd_count; i++) {
-            // Allocation
-            unit_command_t* unit_command = NULL;
-            unit_command = malloc(sizeof(unit_command_t));
-            if (unit_command == NULL) {
-                fprintf(stderr, "Error: malloc failed (%s)\n", strerror(errno));
-                exit(EXIT_FAILURE);
-            }
-
-            // Initialisations
-            unit_command->async = 0;
-            unit_command->separator = SEP_NONE;
-            unit_command->raw_command = NULL;
-            
-            // Ajout dans le tableau de commandes unitaire
-            unit_cmd_array[i] = unit_command;
-        }
-
-        // On ajoute les séparateurs en reparcourant le buffer
-        int separator = 0;
-        for (char* c = buffer; *c != '\0'; c++) { 
-            if (*c == ';') {unit_cmd_array[separator++]->separator = SEP_SEQUENCE; }
-            else if (*c == '|') {unit_cmd_array[separator++]->separator = SEP_PIPE; }
-            else if (*c == '&') {unit_cmd_array[separator]->separator = SEP_BACKGROUND; unit_cmd_array[separator++]->async = 1; } // Ligne tricky haha
-            else if (*c == '>') {unit_cmd_array[separator++]->separator = SEP_REDIRECT; } // TODO unit_command->outfile
-        }
-        unit_cmd_array[separator]->separator = SEP_NONE; // La dernière commande
-
-        // On ajoute chaque séquence à sa commande unitaire
-        int c = 0;
-        const char * delimiter = ";|>&";
-        char* command = strtok(buffer, delimiter);
-        for (int i = 0; i < unit_cmd_count; i++) {
-            if (command == NULL) { break; }
-            unit_cmd_array[c++]->raw_command = command;
-            command = strtok(NULL, delimiter); // On passe à la commande suivante
-        }
-
-        // On exécute tout ce qui est dans le tableau
-        for (int i = 0; i < unit_cmd_count; i++) {
-            count_tokens(unit_cmd_array[i]);
-            //fprintf(stdout, "Number of tokens: %d\n", unit_cmd_array[i]->token_count);
-            analyse_unit_command(unit_cmd_array[i]);
-            //for (int i = 0; i < unit_cmd_array->token_count; i++) fprintf(stdout, "%s\n", unit_cmd_array->token_array[i]);
-            
-            // Built-in "exit"
-            if (strcmp(unit_cmd_array[i]->token_array[0], "exit") == 0) { 
-                free(unit_cmd_array[i]->token_array);
-                printf("Fermeture du shell...\n");
-                exit(EXIT_SUCCESS); 
-            }
-
-            // Built-in "cd"
-            if (strcmp(unit_cmd_array[i]->token_array[0], "cd") == 0) {
-                if (unit_cmd_array[i]->token_count < 2) {
-                    fprintf(stderr, "Error: cd: missing argument\n");
-                } else {
-                    if (chdir(unit_cmd_array[i]->token_array[1]) != 0) {
-                        fprintf(stderr, "Error: cd %s: %s\n", unit_cmd_array[i]->token_array[1], strerror(errno));
-                    }
-                }
-                continue; // Passe à la commande suivante
-            }
-
-            // Built-in "pwd"
-            if (strcmp(unit_cmd_array[i]->token_array[0], "pwd") == 0) {
-                char cwd[1024];
-                if (getcwd(cwd, sizeof(cwd)) == NULL) {
-                    fprintf(stderr, "Error: getcwd failed %s\n", strerror(errno));
-                } else {
-                   printf("%s\n", cwd);
-                }
-                continue; // Passe à la commande suivante
-            }
-            
-            // Gestion des pipes
-            if (unit_cmd_array[i]->separator == SEP_PIPE && i + 1 < unit_cmd_count) {
-                count_tokens(unit_cmd_array[i + 1]);
-                analyse_unit_command(unit_cmd_array[i + 1]);
-                exec_pipe(unit_cmd_array[i], unit_cmd_array[i + 1]);
-                i++; // On saute la commande suivante car elle est déjà traitée
-            }
-            // Gestion des redirections
-            else if (unit_cmd_array[i]->separator == SEP_REDIRECT && i + 1 < unit_cmd_count) {
-                count_tokens(unit_cmd_array[i + 1]);
-                analyse_unit_command(unit_cmd_array[i + 1]);
-                exec_redirect(unit_cmd_array[i], unit_cmd_array[i + 1]);
-                i++; // On saute la commande suivante car elle est déjà traitée
-            }
-            // Exécution normale
-            else {
-                if (unit_cmd_array[i]->separator == SEP_PIPE) { fprintf(stdout, "Tuyau négligé car absence de second processus.\n"); }
-                if (unit_cmd_array[i]->separator == SEP_REDIRECT) { fprintf(stdout, "Redirection négligée car absence de second processus.\n"); }
-                exec_unit_command(unit_cmd_array[i]);
-            }
-        }
+        // Parsing
+        int unit_cmd_count = count_commands(buffer);
+        unit_command_t** unit_cmd_array = create_cmd_array(unit_cmd_count); 
+        fill_cmd_array(unit_cmd_array, buffer, unit_cmd_count);
+        
+        // Exécution
+        exe_cmd_array(unit_cmd_array, unit_cmd_count);
 
         // On libère
         for (int i = 0; i < unit_cmd_count; i++) {

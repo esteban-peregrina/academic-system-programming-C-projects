@@ -22,22 +22,18 @@ int count_tokens(unit_command_t* unit_command) {
     return 0;
 }
 
-int analyse_unit_command(unit_command_t* unit_command) {
-    unit_command->token_array = NULL;
-    unit_command->token_array = malloc(sizeof(char*) * (unit_command->token_count + 1));
-    if (unit_command->token_array == NULL) {
+int count_commands(char* prompt) {
+    int unit_cmd_count = 1; // On compte la dernière après le dernier séparateur
+    for (char* c = prompt; *c != '\0'; c++) { if (*c == ';' || *c == '|' || *c == '>' || *c == '&') { unit_cmd_count++; } }
+    // On construit le tableau des commandes unitaires avec ce nombre
+    unit_command_t** unit_cmd_array = NULL;
+    unit_cmd_array = malloc(sizeof(unit_command_t*) * unit_cmd_count);
+    if (unit_cmd_array == NULL) {
         fprintf(stderr, "Error: malloc failed (%s)\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
-    const char * delimiter = " ";
-    char * strToken = strtok(unit_command->raw_command, delimiter);
-    for (int i = 0; i < unit_command->token_count; i++) {
-        if (strToken == NULL) { break; }
-        unit_command->token_array[i] = strToken;
-        strToken = strtok(NULL, delimiter); // On passe au token suivant
-    }
-    unit_command->token_array[unit_command->token_count] = NULL; // Pour execvp()
 
-    return 0;
+    return unit_cmd_count;
 }
+
 
