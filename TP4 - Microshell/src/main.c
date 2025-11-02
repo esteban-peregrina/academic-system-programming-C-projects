@@ -51,6 +51,7 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
             exit(EXIT_FAILURE);
         }
 
+        // On remplit le tableau
         char* start = buffer;
         int i = 0;
         for (char* c = buffer; *c != '\0'; c++) {
@@ -77,13 +78,14 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
                 unit_cmd_array[i++] = unit_command;
             }
         }
+        // On ajoute la dernière
         unit_command_t* last = malloc(sizeof(unit_command_t));
         last->raw_command = strdup(start);
         last->separator = SEP_NONE;
         last->async = 0;
         unit_cmd_array[i++] = last;
 
-        // On exécute
+        // On exécute tout ce qui est dans le tableau
         for (int i = 0; i < unit_cmd_count; i++) {
             count_tokens(unit_cmd_array[i]);
             //fprintf(stdout, "Number of tokens: %d\n", unit_cmd_array[i]->token_count);
