@@ -8,6 +8,48 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/wait.h> 
+#include <fcntl.h>
+
+int exec_redirect(unit_command_t* unit_command, unit_command_t* next_command) {
+    pid_t pid = fork(); // Split process in two, returning 0 to child and parent PID to parent
+    if (pid == -1) {
+        fprintf(stderr, "Error: fork failed (%s)\n", strerror(errno));
+        free(unit_command->token_array);
+        free(next_command->token_array);
+        exit(EXIT_FAILURE);
+    }
+    else if (pid == 0) {
+        //fprintf(stdout, "I'm the child, my PID is %d !\n", getpid());
+        if (next_command && next_command->token_array && next_command->token_array[0]) {
+            FILE* fd = fopen(next_command->token_array[0], "w");
+            if (fd == NULL) {
+                fprintf(stderr, "Error: fopen failed (%s)\n", strerror(errno));
+                exit(EXIT_FAILURE);
+            }
+            if (dup2(fileno(fd), STDOUT_FILENO) == -1) {
+                fprintf(stderr, "Error: dup2 failed (%s)\n", strerror(errno));
+                fclose(fd);
+                exit(EXIT_FAILURE);
+            }
+            fclose(fd);
+        }
+
+        if (execvp(unit_command->token_array[0], unit_command->token_array) == -1) {
+            fprintf(stderr, "Error: execvp failed (%s)\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+    } else {
+        //fprintf(stdout, "I'm the parent, my PID is %d and my child's PID is %d !\n", getpid(), pid);
+        int status;
+        if(!unit_command->async) { waitpid(pid, &status, 0); }
+    }
+
+    return 0;
+}
+
+int exec_pipe(unit_command_t* cmd1, unit_command_t* cmd2) {
+    
+}
 
 int exec_unit_command(unit_command_t* unit_command) {
     pid_t pid = fork(); // Split process in two, returning 0 to child and parent PID to parent
@@ -94,20 +136,40 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
             analyse_unit_command(unit_cmd_array[i]);
             //for (int i = 0; i < unit_cmd_array->token_count; i++) fprintf(stdout, "%s\n", unit_cmd_array->token_array[i]);
             
+            // Gestion exit
             if (strcmp(unit_cmd_array[i]->token_array[0], "exit") == 0) { 
                 free(unit_cmd_array[i]->token_array);
                 printf("Fermeture du shell...\n");
                 exit(EXIT_SUCCESS); 
             }
             
-            exec_unit_command(unit_cmd_array[i]); //TODO si pipe faut lancer i et i+1 et incrémenter i en plus de la boucle 
+            // Gestion des pipes
+            if (unit_cmd_array[i]->separator == SEP_PIPE && i + 1 < unit_cmd_count) {
+                count_tokens(unit_cmd_array[i + 1]);
+                analyse_unit_command(unit_cmd_array[i + 1]);
+                exec_pipe(unit_cmd_array[i], unit_cmd_array[i + 1]);
+                i++; // On saute la commande suivante car elle est déjà traitée
+            }
+            // Gestion des redirections
+            else if (unit_cmd_array[i]->separator == SEP_REDIRECT && i + 1 < unit_cmd_count) {
+                count_tokens(unit_cmd_array[i + 1]);
+                analyse_unit_command(unit_cmd_array[i + 1]);
+                exec_redirect(unit_cmd_array[i], unit_cmd_array[i + 1]);
+                i++; // On saute la commande suivante car elle est déjà traitée
+            }
+            // Exécution normale
+            else {
+                if (unit_cmd_array[i]->separator == SEP_PIPE) { fprintf(stdout, "Tuyau négligé car absence de second processus.\n"); }
+                if (unit_cmd_array[i]->separator == SEP_REDIRECT) { fprintf(stdout, "Redirection négligée car absence de second processus.\n"); }
+                exec_unit_command(unit_cmd_array[i]);
+            }
         }
 
         // On libère
         for (int i = 0; i < unit_cmd_count; i++) {
             free(unit_cmd_array[i]->token_array); // Even if background ?
             free(unit_cmd_array[i]);
-            // Pas besoin de free les raw_command, car ils pointent sur le buffer, fractionné par strtok()
+            // Pas besoin de free les raw_command, car ils pointent sur le buffer statique, fractionné (dans le sens d'une string qui finie par '\0') par strtok()
         }
         free(unit_cmd_array);
     }
