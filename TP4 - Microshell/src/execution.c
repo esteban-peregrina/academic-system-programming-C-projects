@@ -139,11 +139,6 @@ int exec_pipe(unit_command_t* cmd1, unit_command_t* cmd2) {
 int exe_cmd_array (unit_command_t** unit_cmd_array, int unit_cmd_count) {
     // On exécute tout ce qui est dans le tableau
     for (int i = 0; i < unit_cmd_count; i++) {
-        count_tokens(unit_cmd_array[i]);
-        //fprintf(stdout, "Number of tokens: %d\n", unit_cmd_array[i]->token_count);
-        analyse_unit_command(unit_cmd_array[i]);
-        //for (int i = 0; i < unit_cmd_array->token_count; i++) fprintf(stdout, "%s\n", unit_cmd_array->token_array[i]);
-        
         // Built-in "exit"
         if (strcmp(unit_cmd_array[i]->token_array[0], "exit") == 0) { 
             free(unit_cmd_array[i]->token_array);
@@ -176,18 +171,16 @@ int exe_cmd_array (unit_command_t** unit_cmd_array, int unit_cmd_count) {
         
         // Gestion des pipes
         if (unit_cmd_array[i]->separator == SEP_PIPE && i + 1 < unit_cmd_count) {
-            count_tokens(unit_cmd_array[i + 1]);
-            analyse_unit_command(unit_cmd_array[i + 1]);
             exec_pipe(unit_cmd_array[i], unit_cmd_array[i + 1]);
             i++; // On saute la commande suivante car elle est déjà traitée
         }
+
         // Gestion des redirections
         else if (unit_cmd_array[i]->separator == SEP_REDIRECT && i + 1 < unit_cmd_count) {
-            count_tokens(unit_cmd_array[i + 1]);
-            analyse_unit_command(unit_cmd_array[i + 1]);
             exec_redirect(unit_cmd_array[i], unit_cmd_array[i + 1]);
             i++; // On saute la commande suivante car elle est déjà traitée
         }
+
         // Exécution normale
         else {
             if (unit_cmd_array[i]->separator == SEP_PIPE) { fprintf(stdout, "Tuyau négligé car absence de second processus.\n"); }

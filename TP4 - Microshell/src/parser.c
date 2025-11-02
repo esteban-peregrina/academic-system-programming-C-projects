@@ -72,7 +72,9 @@ int fill_cmd_array(unit_command_t** unit_cmd_array, char* prompt, int unit_cmd_c
     char* command = strtok(prompt, delimiter);
     for (int i = 0; i < unit_cmd_count; i++) {
         if (command == NULL) { break; }
-        unit_cmd_array[c++]->raw_command = command;
+        unit_cmd_array[c]->raw_command = command;
+        count_tokens(unit_cmd_array[c]);
+        analyse_unit_command(unit_cmd_array[c]); 
         command = strtok(NULL, delimiter); // On passe à la commande suivante
     }
 

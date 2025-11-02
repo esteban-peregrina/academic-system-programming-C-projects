@@ -18,17 +18,16 @@ int main(int argc, char **argv) { // TODO -v verbose et usage
         fprintf(stdout, "€ ");
         char buffer[MAX_LENGTH];
         prompt(buffer);
-        //fprintf(stdout, "Prompt is: %s\n", buffer);
         
-        // Parsing
+        // Lexing et parsing
         int unit_cmd_count = count_commands(buffer);
         unit_command_t** unit_cmd_array = create_cmd_array(unit_cmd_count); 
         fill_cmd_array(unit_cmd_array, buffer, unit_cmd_count);
         
-        // Exécution
+        // Exécution (dont built-ins)
         exe_cmd_array(unit_cmd_array, unit_cmd_count);
 
-        // On libère
+        // On libère la mémoire
         for (int i = 0; i < unit_cmd_count; i++) {
             free(unit_cmd_array[i]->token_array); // Even if background ?
             free(unit_cmd_array[i]);
